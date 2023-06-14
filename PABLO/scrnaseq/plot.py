@@ -1,8 +1,9 @@
-def split_umap(adata, split_by, ncol=2, nrow=None, **kwargs):
-    import scanpy as sc
-    import matplotlib.pyplot as plt
-    import numpy as np
+import scanpy as sc
+import matplotlib.pyplot as plt
+import numpy as np
 
+
+def split_umap(adata, split_by, ncol=2, nrow=None, **kwargs):
     categories = adata.obs[split_by].cat.categories
     if nrow is None:
         nrow = int(np.ceil(len(categories) / ncol))
