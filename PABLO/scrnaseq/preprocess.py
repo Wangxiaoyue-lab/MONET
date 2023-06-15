@@ -1,3 +1,25 @@
+
+def mark_outlier(adata, metric: str, nmads: int):
+    from scipy.stats import median_abs_deviation
+    def is_outlier(adata, metric: str, nmads: int):
+        M = adata.obs[metric]
+        outlier = (M < np.median(M) - nmads * median_abs_deviation(M)) | (
+            np.median(M) + nmads * median_abs_deviation(M) < M
+        )
+        return outlier
+
+    adata.obs["counts_coutlier"] = (
+        is_outlier(adata, "log1p_total_counts", 5)
+        | is_outlier(adata, "log1p_n_genes_by_counts", 5)
+        | is_outlier(adata, "pct_counts_in_top_20_genes", 5)
+    )
+    adata.obs["mt_outlier"] = is_outlier(adata, "pct_counts_mt", 3) | (
+        adata.obs["pct_counts_mt"] > 8
+    )
+    return adata
+
+
+
 def run_sctransform(adata, layer=None, **kwargs):
     # Extract the representation matrix layer from the anndata object
     import anndata2ri
