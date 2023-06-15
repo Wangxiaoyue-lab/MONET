@@ -1,6 +1,6 @@
-
-def mark_outlier(adata, metric: str, nmads: int):
+def mark_outlier(adata, metric: str = None, nmads: int = 5):
     from scipy.stats import median_abs_deviation
+
     def is_outlier(adata, metric: str, nmads: int):
         M = adata.obs[metric]
         outlier = (M < np.median(M) - nmads * median_abs_deviation(M)) | (
@@ -8,14 +8,18 @@ def mark_outlier(adata, metric: str, nmads: int):
         )
         return outlier
 
-    adata.obs["counts_coutlier"] = (
-        is_outlier(adata, "log1p_total_counts", 5)
-        | is_outlier(adata, "log1p_n_genes_by_counts", 5)
-        | is_outlier(adata, "pct_counts_in_top_20_genes", 5)
-    )
-    adata.obs["mt_outlier"] = is_outlier(adata, "pct_counts_mt", 3) | (
-        adata.obs["pct_counts_mt"] > 8
-    )
+    if metric is None:
+        adata.obs["counts_coutlier"] = (
+            is_outlier(adata, "log1p_total_counts", nmads)
+            | is_outlier(adata, "log1p_n_genes_by_counts", nmads)
+            | is_outlier(adata, "pct_counts_in_top_20_genes", nmads)
+        )
+        adata.obs["mt_outlier"] = is_outlier(adata, "pct_counts_mt", nmads) | (
+            adata.obs["pct_counts_mt"] > 8
+        )
+    else:
+        adata.obs[f"{metric}_outlier"] = is_outlier(adata, metric, nmads)
+
     return adata
 
 
