@@ -1,24 +1,36 @@
-def mark_outlier(adata, metric: str = None, nmads: int = 5):
-    from scipy.stats import median_abs_deviation
+from typing import Optional
+import anndata2ri
+from rpy2.robjects.packages import importr
+from rpy2.robjects import r, pandas2ri
+import numpy as np
+from scipy.stats import median_abs_deviation
 
-    def is_outlier(adata, metric: str, nmads: int):
+def mark_outlier(adata, metric: Optional[str] = None, nmads: int = 5, mt_lower: int = 5, bound: str = "both"):
+    def is_outlier(adata, metric: str, nmads: int, bound: str = "both"):
         M = adata.obs[metric]
-        outlier = (M < np.median(M) - nmads * median_abs_deviation(M)) | (
-            np.median(M) + nmads * median_abs_deviation(M) < M
-        )
+        lower_bound = np.median(M) - nmads * median_abs_deviation(M)
+        upper_bound = np.median(M) + nmads * median_abs_deviation(M)
+        if bound == "lower":
+            outlier = M < lower_bound
+        elif bound == "upper":
+            outlier = upper_bound < M
+        else:
+            outlier = (M < lower_bound) | (upper_bound < M)
+        print(f"{metric}--Lower bound: {lower_bound}")
+        print(f"{metric}--Upper bound: {upper_bound}")
         return outlier
 
     if metric is None:
         adata.obs["counts_coutlier"] = (
-            is_outlier(adata, "log1p_total_counts", nmads)
-            | is_outlier(adata, "log1p_n_genes_by_counts", nmads)
-            | is_outlier(adata, "pct_counts_in_top_20_genes", nmads)
+            is_outlier(adata, "log1p_total_counts", nmads, bound = "upper")
+            | is_outlier(adata, "log1p_n_genes_by_counts", nmads, bound = "upper")
+            | is_outlier(adata, "pct_counts_in_top_20_genes", nmads, bound = "upper")
         )
-        adata.obs["mt_outlier"] = is_outlier(adata, "pct_counts_mt", nmads) | (
-            adata.obs["pct_counts_mt"] > 8
+        adata.obs["mt_outlier"] = is_outlier(adata, "pct_counts_mt", 3, bound="upper") | (
+            adata.obs["pct_counts_mt"] > mt_lower
         )
     else:
-        adata.obs[f"{metric}_outlier"] = is_outlier(adata, metric, nmads)
+        adata.obs[f"{metric}_outlier"] = is_outlier(adata, metric, nmads, bound: str = "both")
 
     return adata
 
@@ -52,11 +64,6 @@ def run_sctransform(adata, layer=None, **kwargs):
     new.assay.name: Name for the new assay containing the normalized data; default is 'SCT'
     """
     # Extract the representation matrix layer from the anndata object
-    import anndata2ri
-    from rpy2.robjects.packages import importr
-    from rpy2.robjects import r, pandas2ri
-    import numpy as np
-
     anndata2ri.activate()
     pandas2ri.activate()
     if layer:
