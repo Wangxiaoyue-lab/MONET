@@ -34,6 +34,23 @@ def mark_outlier(adata, metric: Optional[str] = None, nmads: int = 5, mt_lower: 
 
     return adata
 
+def run_norm2scale(adata, layer_raw: str = None,n_top_genes: int = 2000, regress_vars: List = None, **kwargs):
+    if layer_raw:
+        adata.layers['raw_counts'] = adata.X
+    else:
+        adata.X = adata.layers[layer_raw]
+
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    adata.layers["log1p_norm"] = adata.X
+    sc.pp.highly_variable_genes(adata, flavor='seurat_v3', n_top_genes = n_top_genes)
+    adata = adata[:, adata.var.highly_variable]
+    if regress_vars:
+        regress_vars = ['total_counts', 'pct_counts_mt']
+    sc.pp.regress_out(adata, regress_vars)
+    sc.pp.scale(adata, max_value=10)
+    adata.layers["scale"] = adata.X
+    return adata
 
 
 def run_sctransform(adata, layer=None, **kwargs):
