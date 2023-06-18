@@ -34,7 +34,12 @@ def mark_outlier(adata, metric: Optional[str] = None, nmads: int = 5, mt_lower: 
 
     return adata
 
-def run_norm2scale(adata, layer_raw: str = None,n_top_genes: int = 2000, regress_vars: List = None, **kwargs):
+
+#def run_norm_scran(adata):
+
+#def run_hvg_scry(adata):
+
+def run_norm2scale_seurat(adata, layer_raw: str = None,n_top_genes: int = 2000, regress_vars: List = None, **kwargs):
     if layer_raw:
         adata.layers['raw_counts'] = adata.X
     else:
@@ -52,7 +57,7 @@ def run_norm2scale(adata, layer_raw: str = None,n_top_genes: int = 2000, regress
     adata.layers["scale"] = adata.X
     return adata
 
-def run_sctransform(adata, layer=None, **kwargs):
+def run_norm2scale_sct(adata, layer=None, **kwargs):
     """
     Run SCTransform on the adata object and add the results as a new layer
     Arguments:

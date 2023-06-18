@@ -1,3 +1,6 @@
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.gridspec import GridSpec
+
 def show_colormaps(cmap_name=None, n=5, plot=True):
     """获得colormap基础颜色"""
     # 获取所有可用的颜色映射名称
@@ -41,3 +44,39 @@ def show_colormaps(cmap_name=None, n=5, plot=True):
         plt.show()
     # 返回颜色值字典
     return colors_dict
+
+
+
+def show_markers(adata, keys_select: dict, marker_genes: dict, cluster: str, filename: str, n_rows: int = 3,n_cols: int = 3):
+    with PdfPages(filename) as pdf:
+        for ct in keys_select:
+            print(f"{ct.upper()}:")
+            fig, axs = plt.subplots(n_rows + 3, n_cols, figsize=(4*n_cols, 4*(n_rows + 5)), gridspec_kw={'wspace': 0.2, 'hspace': 0.2})
+            
+            # Create new axis in existing figure
+            gs = GridSpec(n_rows + 3, n_cols, height_ratios=[4] + [0] + [0] + [1] * n_rows)
+            ax2 = fig.add_subplot(gs[0, :])
+            sc.pl.umap(data_sc, color=[cluster], legend_loc="on data", size=40, legend_fontsize = 20, ax=ax2, show=False)
+
+            for i, gene in enumerate(marker_genes[ct]):
+                ax = axs[(i // n_cols) + 3, i % n_cols]
+                sc.pl.umap(
+                    data_sc,
+                    color=gene,
+                    vmin=0,
+                    vmax="p99",
+                    sort_order=False,
+                    frameon=False,
+                    cmap="Reds",
+                    ax=ax,
+                    show=False
+                )
+                ax.set_title(gene)
+            for i in range(len(marker_genes[ct]), n_rows*n_cols):
+                ax = axs[(i // n_cols) + 3, i % n_cols]
+                ax.axis('off')
+            fig.subplots_adjust(left=0.04)
+            fig.suptitle(ct.upper(), fontsize=60)
+            pdf.savefig(fig)
+            plt.close(fig)
+            print("\n\n\n")
