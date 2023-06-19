@@ -80,3 +80,31 @@ def show_markers(adata, keys_select: dict, marker_genes: dict, cluster: str, fil
             pdf.savefig(fig)
             plt.close(fig)
             print("\n\n\n")
+
+
+
+# https://scanpy-tutorials.readthedocs.io/en/latest/paga-paul15.html#Optional:-Denoising-the-graph
+def show_paga_path(adata, celltype: str, lineages: dict, pseudotime: str, gene_names: List, filename: str):
+    _, axs = pl.subplots(ncols=len(lineages), figsize=(6, 2.5), gridspec_kw={'wspace': 0.05, 'left': 0.12})
+    pl.subplots_adjust(left=0.05, right=0.98, top=0.82, bottom=0.2)
+    for ilineage, (descr, lineage) in enumerate(lineages):
+        _, data = sc.pl.paga_path(
+            adata, lineage, gene_names,
+            show_node_names=False,
+            ax=axs[ilineage],
+            ytick_fontsize=12,
+            left_margin=0.15,
+            n_avg=50,
+            annotations=[pseudotime],
+            show_yticks=True if ilineage==0 else False,
+            show_colorbar=False,
+            color_map='Greys',
+            groups_key=celltype,
+            color_maps_annotations={pseudotime: 'viridis'},
+            title='{} lineage'.format(descr),
+            return_data=True,
+            show=False)
+        #data.to_csv('./write/paga_path_{}.csv'.format(descr))
+    pl.savefig(filename)
+    pl.show()
+
